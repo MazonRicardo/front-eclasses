@@ -1,41 +1,64 @@
-// Função para obter uma foto aleatória de gato
-async function getRandomCatImage() {
-    try {
-        const response = await fetch('https://cataas.com/cat?json=true'); // GET
-        const data = await response.json(); // Converte resposta em JSON
-        return 'https://cataas.com' + data.url; // Retorna URL completa
-    } catch (error) {
-        console.error("Erro ao buscar a imagem do gato:", error);
-        return 'https://cataas.com/cat/cute'; // fallback caso dê erro
-    }
+// ==================== CONFIGURAÇÃO API ====================
+const API_URL = 'http://localhost:3000';
+
+// Funções de busca na API
+async function getAlunos() {
+    const res = await fetch(`${API_URL}/alunos`);
+    return await res.json();
 }
 
-// Função para renderizar competidores com fotos de gatos
-async function renderCompetidores() {
-    const list = document.getElementById('list-competidores');
-    list.innerHTML = ''; // Limpa antes de renderizar
-
-    for (const c of state.competitors) {
-        const team = state.teams.find(t => t.id == c.teamId);
-        const catImage = await getRandomCatImage(); // Busca imagem aleatória do gato
-
-        const div = document.createElement('div');
-        div.classList.add('card');
-        div.innerHTML = `
-            <span class="card-tag">${team?.name || 'Sem Time'}</span>
-            <img src="${catImage}" alt="Gato do ${c.nickname}" style="width:100%; border-radius: 8px; margin-bottom: 8px;">
-            <h3>${c.nickname}</h3>
-            <p class="subtitle">${c.name}</p>
-        `;
-        list.appendChild(div);
-    }
+async function getEquipes() {
+    const res = await fetch(`${API_URL}/equipes`);
+    return await res.json();
 }
 
-// Atualize renderAll para usar await no renderCompetidores
-async function renderAll() {
-    renderDashboard();
-    renderJogos();
-    renderTimes();
-    await renderCompetidores(); // Espera imagens dos gatos
-    renderConfrontos();
+async function getModalidades() {
+    const res = await fetch(`${API_URL}/modalidades`);
+    return await res.json();
+}
+
+async function getPartidas() {
+    const res = await fetch(`${API_URL}/partidas`);
+    return await res.json();
+}
+
+// ==================== ADAPTADORES (Mapping) ====================
+
+// Converte dados da API para o formato que seu front espera
+function adaptCompetitors(alunos) {
+    return alunos.map(a => ({
+        id: a.id_aluno,
+        name: a.nome,
+        nickname: a.nick,
+        teamId: a.id_equipe
+    }));
+}
+
+function adaptTeams(equipes) {
+    return equipes.map(e => ({
+        id: e.id_equipe,
+        name: e.nome_equipe,
+        color: "#6366f1"   // cor padrão (pode melhorar depois)
+    }));
+}
+
+function adaptGames(modalidades) {
+    return modalidades.map(m => ({
+        id: m.id_modalidade,
+        name: m.nome_jogo,
+        genre: "Competitivo"   // valor padrão
+    }));
+}
+
+function adaptMatches(partidas) {
+    return partidas.map(p => ({
+        id: p.id_partida,
+        gameId: p.id_modalidade,
+        team1Id: p.id_equipe1,
+        team2Id: p.id_equipe2,
+        date: new Date(p.data_hora_inicio).toISOString(),
+        score1: 0,
+        score2: 0,
+        status: "scheduled"
+    }));
 }
